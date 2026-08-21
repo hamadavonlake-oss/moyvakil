@@ -12,7 +12,7 @@ COPY apps/api/scripts apps/api/scripts
 
 RUN npm install
 
-RUN cd apps/api && npx prisma generate && npx nest build
+RUN cd apps/api && npx prisma generate && npx tsc -p tsconfig.build.json --listEmittedFiles && ls -la dist/
 
 FROM node:20-alpine
 
