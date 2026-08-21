@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === ENUMS ===
+
+enum LawType {
+  CONSTITUTION
+  CODE
+  LAW
+  DECREE
+  REGULATION
+}
+
+enum LawStatus {
+  IN_FORCE
+  AMENDED
+  REPEALED
+  DRAFT
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  USER
+  LAWYER
+  ADMIN
+  SUPER_ADMIN
+}
+
+// === AUTH & USERS ===
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  lawyerId  String?  @unique
+
+  createdAt DateTime @default(now())
+}
+
+// === COUNTRY ===
+
+model Country {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  nameUz    String
+  nameRu    String
+  nameEn    String
+
+  laws      Law[]
+  lawyers   Lawyer[]
+  guides    Guide[]
+  questions Question[]
+
+  createdAt DateTime @default(now())
+}
+
+// === LEGAL LIBRARY ===
+
+model Law {
+  id            String     @id @default(cuid())
+  countryId     String
+  country       Country    @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  titleUz       String
+  titleRu       String
+  titleEn       String?
+  slug          String     @unique
+
+  fullTextUz    String     @db.Text
+  fullTextRu    String     @db.Text
+  fullTextEn    String?    @db.Text
+  summaryUz     String?    @db.Text
+  summaryRu     String?    @db.Text
+  summaryEn     String?    @db.Text
+
+  type          LawType
+  category      String
+  status        LawStatus  @default(IN_FORCE)
+  adoptionDate  DateTime?
+  effectiveDate DateTime?
+  sourceUrl     String?
+  lastUpdated   DateTime   @default(now())
+
+  articles      LawArticle[]
+  amendments    LawAmendment[]
+  guides        Guide[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([countryId, type])
+  @@index([countryId, category])
+  @@index([status])
+}
+
+model LawArticle {
+  id        String  @id @default(cuid())
+  lawId     String
+  law       Law     @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  number    String
+  titleUz   String?
+  titleRu   String?
+  titleEn   String?
+  contentUz String  @db.Text
+  contentRu String  @db.Text
+  contentEn String? @db.Text
+
+  @@index([lawId])
+}
+
+model LawAmendment {
+  id          String   @id @default(cuid())
+  lawId       String
+  law         Law      @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  description String
+  date        DateTime
+  sourceUrl   String?
+}
+
+// === LAWYERS & MARKETPLACE ===
+
+model Lawyer {
+  id              String    @id @default(cuid())
+  countryId       String
+  country         Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  userId          String?   @unique
+
+  firstName       String
+  lastName        String
+  slug            String    @unique
+  photoUrl        String?
+  phone           String?
+  email           String?
+  website         String?
+
+  licenseNumber   String?
+  licenseVerified Boolean   @default(false)
+  yearsOfPractice Int?
+  education       String?   @db.Text
+  bioUz           String?    @db.Text
+  bioRu           String?    @db.Text
+  bioEn           String?    @db.Text
+
+  city            String
+  region          String?
+
+  practiceAreas   PracticeArea[]
+  languages       LawyerLanguage[]
+
+  avgRating       Float     @default(0)
+  reviewCount     Int       @default(0)
+  isVerified      Boolean   @default(false)
+
+  reviews         Review[]
+  answers         QaAnswer[]
+  services        LegalService[]
+  endorsementsGiven   LawyerEndorsement[] @relation("Endorser")
+  endorsementsReceived LawyerEndorsement[] @relation("Endorsee")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([countryId, city])
+  @@index([avgRating(sort: Desc)])
+}
+
+model PracticeArea {
+  id       String  @id @default(cuid())
+  lawyerId String
+  lawyer   Lawyer  @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  area     String
+
+  @@unique([lawyerId, area])
+}
+
+model LawyerLanguage {
+  id       String  @id @default(cuid())
+  lawyerId String
+  lawyer   Lawyer  @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  language String
+
+  @@unique([lawyerId, language])
+}
+
+model Review {
+  id         String       @id @default(cuid())
+  lawyerId   String
+  lawyer     Lawyer       @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  authorName String
+  rating     Int
+  title      String?
+  content    String       @db.Text
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  @@index([lawyerId, status])
+}
+
+model LawyerEndorsement {
+  id         String  @id @default(cuid())
+  endorserId String
+  endorseeId String
+  endorser   Lawyer  @relation("Endorser", fields: [endorserId], references: [id], onDelete: Cascade)
+  endorsee   Lawyer  @relation("Endorsee", fields: [endorseeId], references: [id], onDelete: Cascade)
+  area       String
+
+  @@unique([endorserId, endorseeId, area])
+}
+
+// === LEGAL Q&A ===
+
+model Question {
+  id          String   @id @default(cuid())
+  countryId   String
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  title       String
+  body        String   @db.Text
+  category    String
+  region      String?
+  language    String
+  authorName  String
+  viewCount   Int      @default(0)
+  answerCount Int      @default(0)
+  isResolved  Boolean  @default(false)
+
+  answers     QaAnswer[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([countryId, category])
+}
+
+model QaAnswer {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  lawyerId   String?
+  lawyer     Lawyer?  @relation(fields: [lawyerId], references: [id], onDelete: SetNull)
+  body       String   @db.Text
+  isHelpful  Boolean  @default(false)
+  upvotes    Int      @default(0)
+
+  createdAt  DateTime @default(now())
+
+  @@index([questionId])
+}
+
+// === LEGAL GUIDES ===
+
+model Guide {
+  id          String   @id @default(cuid())
+  countryId   String
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  lawId       String?
+  law         Law?     @relation(fields: [lawId], references: [id], onDelete: SetNull)
+
+  titleUz     String
+  titleRu     String
+  titleEn     String?
+  slug        String   @unique
+  bodyUz      String   @db.Text
+  bodyRu      String   @db.Text
+  bodyEn      String?  @db.Text
+  category    String
+  tags        String[]
+  readingTime Int?
+
+  published   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryId, category])
+}
+
+// === FIXED-PRICE SERVICES (Phase 2 ready) ===
+
+model LegalService {
+  id             String   @id @default(cuid())
+  lawyerId       String
+  lawyer         Lawyer   @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  titleUz        String
+  titleRu        String
+  titleEn        String?
+  descriptionUz  String   @db.Text
+  descriptionRu  String   @db.Text
+  descriptionEn  String?  @db.Text
+  price          Decimal  @db.Decimal(12, 2)
+  currency       String   @default("UZS")
+  deliveryDays   Int
+  category       String
+  isActive       Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category, isActive])
+}
+
+// === RAG / AI EMBEDDINGS ===
+
+model LegalEmbedding {
+  id          String   @id @default(cuid())
+  contentId   String
+  contentType String
+  chunk       String   @db.Text
+  embedding   Unsupported("vector(1536)")
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([contentType])
+}

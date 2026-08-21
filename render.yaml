@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: moyvakil-api
+    runtime: node
+    rootDir: apps/api
+    plan: free
+    region: oregon
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: bash scripts/render-start.sh
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      - key: ADMIN_EMAIL
+        value: admin@wakeely.ca
+      - key: ADMIN_PASSWORD
+        value: Admin123!@#
+      - key: NEXT_PUBLIC_APP_URL
+        value: ""
+      - key: ALLOWED_ORIGINS
+        value: ""
+      - key: OPENAI_API_KEY
+        value: ""
+
+  - type: postgres
+    name: moyvakil-db
+    plan: free
+    databaseName: moyvakil
+    ipAllowList: []
