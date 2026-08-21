@@ -309,18 +309,3 @@ model LegalService {
 
   @@index([category, isActive])
 }
-
-// === RAG / AI EMBEDDINGS ===
-
-model LegalEmbedding {
-  id          String   @id @default(cuid())
-  contentId   String
-  contentType String
-  chunk       String   @db.Text
-  embedding   Unsupported("vector(1536)")
-  metadata    Json?
-
-  createdAt   DateTime @default(now())
-
-  @@index([contentType])
-}

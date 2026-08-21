@@ -131,19 +131,27 @@ export class EmbeddingService {
   }
 
   async getStats() {
-    const result = await this.prisma.$queryRaw`
-      SELECT content_type as "contentType", COUNT(*) as count
-      FROM legal_embeddings
-      GROUP BY content_type
-    ` as any[];
+    try {
+      const result = await this.prisma.$queryRaw`
+        SELECT content_type as "contentType", COUNT(*) as count
+        FROM legal_embeddings
+        GROUP BY content_type
+      ` as any[];
 
-    const total = result.reduce((sum: number, r: any) => sum + Number(r.count), 0);
-    return { total, byType: result };
+      const total = result.reduce((sum: number, r: any) => sum + Number(r.count), 0);
+      return { total, byType: result };
+    } catch {
+      return { total: 0, byType: [], note: 'Vector search not available (pgvector extension required)' };
+    }
   }
 
   async clearAll() {
-    const result = await this.prisma.$executeRaw`DELETE FROM legal_embeddings`;
-    return { deleted: Number(result) };
+    try {
+      const result = await this.prisma.$executeRaw`DELETE FROM legal_embeddings`;
+      return { deleted: Number(result) };
+    } catch {
+      return { deleted: 0, note: 'Vector search not available (pgvector extension required)' };
+    }
   }
 
   // === HELPERS ===

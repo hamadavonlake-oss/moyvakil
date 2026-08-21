@@ -234,19 +234,6 @@ CREATE TABLE "LegalService" (
     CONSTRAINT "LegalService_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "LegalEmbedding" (
-    "id" TEXT NOT NULL,
-    "contentId" TEXT NOT NULL,
-    "contentType" TEXT NOT NULL,
-    "chunk" TEXT NOT NULL,
-    "embedding" vector(1536) NOT NULL,
-    "metadata" JSONB,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "LegalEmbedding_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -309,9 +296,6 @@ CREATE INDEX "Guide_countryId_category_idx" ON "Guide"("countryId", "category");
 
 -- CreateIndex
 CREATE INDEX "LegalService_category_isActive_idx" ON "LegalService"("category", "isActive");
-
--- CreateIndex
-CREATE INDEX "LegalEmbedding_contentType_idx" ON "LegalEmbedding"("contentType");
 
 -- AddForeignKey
 ALTER TABLE "Law" ADD CONSTRAINT "Law_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES "Country"("id") ON DELETE CASCADE ON UPDATE CASCADE;
