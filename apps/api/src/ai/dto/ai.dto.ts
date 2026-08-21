@@ -17,6 +17,22 @@ export class AskDto {
   countryId?: string;
 }
 
+export class ChatDto {
+  @ApiProperty({ example: 'How do I register a company in Uzbekistan?' })
+  @IsString()
+  message: string;
+
+  @ApiPropertyOptional({ enum: ['uz', 'ru', 'en'], default: 'ru' })
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  countryId?: string;
+}
+
 export class EmbedContentDto {
   @ApiProperty() @IsString() contentId: string;
   @ApiProperty() @IsString() contentType: string;

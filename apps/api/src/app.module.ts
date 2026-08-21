@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { LawsModule } from './laws/laws.module';
 import { LawyersModule } from './lawyers/lawyers.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { ServicesModule } from './services/services.module';
 import { QaModule } from './qa/qa.module';
 import { GuidesModule } from './guides/guides.module';
 import { AdminModule } from './admin/admin.module';
@@ -20,6 +21,7 @@ import { HealthModule } from './health/health.module';
     LawsModule,
     LawyersModule,
     ReviewsModule,
+    ServicesModule,
     QaModule,
     GuidesModule,
     AdminModule,

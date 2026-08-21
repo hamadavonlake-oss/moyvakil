@@ -17,6 +17,18 @@ export class LawyersController {
     return this.lawyersService.findAll(query);
   }
 
+  @Get(':slug/reviews')
+  @ApiOperation({ summary: 'Get approved reviews for a lawyer by slug' })
+  getReviewsBySlug(@Param('slug') slug: string) {
+    return this.lawyersService.getReviewsBySlug(slug);
+  }
+
+  @Get(':slug/services')
+  @ApiOperation({ summary: 'Get active services for a lawyer by slug' })
+  getServicesBySlug(@Param('slug') slug: string) {
+    return this.lawyersService.getServicesBySlug(slug);
+  }
+
   @Get(':slug')
   @ApiOperation({ summary: 'Get lawyer profile by slug' })
   findBySlug(@Param('slug') slug: string) {

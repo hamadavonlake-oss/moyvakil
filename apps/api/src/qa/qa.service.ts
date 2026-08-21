@@ -52,7 +52,23 @@ export class QaService {
   }
 
   async createQuestion(dto: CreateQuestionDto) {
-    return this.prisma.question.create({ data: dto });
+    let countryId = dto.countryId;
+    if (!countryId) {
+      const uz = await this.prisma.country.findUnique({ where: { code: 'UZ' } });
+      countryId = uz?.id;
+    }
+
+    return this.prisma.question.create({
+      data: {
+        title: dto.title,
+        body: dto.body,
+        category: dto.category || 'civil',
+        language: dto.language || 'uz',
+        authorName: dto.authorName || 'User',
+        region: dto.region || null,
+        countryId: countryId || '',
+      },
+    });
   }
 
   async createAnswer(questionId: string, dto: CreateAnswerDto) {

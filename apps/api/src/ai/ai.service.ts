@@ -88,43 +88,63 @@ export class AiService {
   // === KEYWORD SEARCH (fallback) ===
 
   private async keywordSearch(query: string, countryId?: string) {
+    const words = query.split(/\s+/).filter((w) => w.length > 2);
+
     const lawWhere: any = {};
     if (countryId) lawWhere.countryId = countryId;
-    lawWhere.OR = [
-      { titleUz: { contains: query, mode: 'insensitive' } },
-      { titleRu: { contains: query, mode: 'insensitive' } },
-      { summaryUz: { contains: query, mode: 'insensitive' } },
-      { summaryRu: { contains: query, mode: 'insensitive' } },
-      { fullTextUz: { contains: query, mode: 'insensitive' } },
-      { fullTextRu: { contains: query, mode: 'insensitive' } },
-    ];
+    if (words.length > 0) {
+      lawWhere.OR = words.flatMap((word) => [
+        { titleUz: { contains: word, mode: 'insensitive' } },
+        { titleRu: { contains: word, mode: 'insensitive' } },
+        { summaryUz: { contains: word, mode: 'insensitive' } },
+        { summaryRu: { contains: word, mode: 'insensitive' } },
+        { fullTextUz: { contains: word, mode: 'insensitive' } },
+        { fullTextRu: { contains: word, mode: 'insensitive' } },
+      ]);
+    } else {
+      lawWhere.OR = [
+        { titleUz: { contains: query, mode: 'insensitive' } },
+        { titleRu: { contains: query, mode: 'insensitive' } },
+      ];
+    }
 
     const guideWhere: any = { published: true };
     if (countryId) guideWhere.countryId = countryId;
-    guideWhere.OR = [
-      { titleUz: { contains: query, mode: 'insensitive' } },
-      { titleRu: { contains: query, mode: 'insensitive' } },
-      { bodyUz: { contains: query, mode: 'insensitive' } },
-      { bodyRu: { contains: query, mode: 'insensitive' } },
-    ];
+    if (words.length > 0) {
+      guideWhere.OR = words.flatMap((word) => [
+        { titleUz: { contains: word, mode: 'insensitive' } },
+        { titleRu: { contains: word, mode: 'insensitive' } },
+        { bodyUz: { contains: word, mode: 'insensitive' } },
+        { bodyRu: { contains: word, mode: 'insensitive' } },
+      ]);
+    } else {
+      guideWhere.OR = [
+        { titleUz: { contains: query, mode: 'insensitive' } },
+        { titleRu: { contains: query, mode: 'insensitive' } },
+      ];
+    }
 
     const [laws, guides] = await Promise.all([
       this.prisma.law.findMany({ where: lawWhere, take: 5, select: { id: true, slug: true, titleUz: true, titleRu: true, summaryUz: true, summaryRu: true, fullTextUz: true, fullTextRu: true, category: true } }),
       this.prisma.guide.findMany({ where: guideWhere, take: 5, select: { id: true, slug: true, titleUz: true, titleRu: true, bodyUz: true, bodyRu: true, category: true } }),
     ]);
 
-    // Convert to chunks format for unified processing
     const chunks: any[] = [];
     for (const law of laws) {
+      if (law.summaryUz) {
+        chunks.push({ contentId: law.id, contentType: 'law', chunk: law.summaryUz, similarity: 0.8, metadata: { titleUz: law.titleUz, titleRu: law.titleRu, slug: law.slug, category: law.category } });
+      }
       if (law.summaryRu) {
         chunks.push({ contentId: law.id, contentType: 'law', chunk: law.summaryRu, similarity: 0.8, metadata: { titleUz: law.titleUz, titleRu: law.titleRu, slug: law.slug, category: law.category } });
       }
-      if (law.fullTextRu) {
-        chunks.push({ contentId: law.id, contentType: 'law', chunk: law.fullTextRu.substring(0, 1500), similarity: 0.7, metadata: { titleUz: law.titleUz, titleRu: law.titleRu, slug: law.slug, category: law.category } });
+      if (law.fullTextUz) {
+        chunks.push({ contentId: law.id, contentType: 'law', chunk: law.fullTextUz.substring(0, 1500), similarity: 0.7, metadata: { titleUz: law.titleUz, titleRu: law.titleRu, slug: law.slug, category: law.category } });
       }
     }
     for (const guide of guides) {
-      chunks.push({ contentId: guide.id, contentType: 'guide', chunk: guide.bodyRu.substring(0, 1500), similarity: 0.75, metadata: { titleUz: guide.titleUz, titleRu: guide.titleRu, slug: guide.slug, category: guide.category } });
+      if (guide.bodyUz) {
+        chunks.push({ contentId: guide.id, contentType: 'guide', chunk: guide.bodyUz.substring(0, 1500), similarity: 0.75, metadata: { titleUz: guide.titleUz, titleRu: guide.titleRu, slug: guide.slug, category: guide.category } });
+      }
     }
 
     return chunks;
@@ -221,6 +241,12 @@ export class AiService {
   }
 
   private generateFallback(question: string, context: string, language: string, chunks: any[]) {
+    const noResults: Record<string, string> = {
+      uz: "Kechirasiz, sizning savolingiz bo'yicha bazamizda aniq huquqiy ma'lumot topilmadi. Iltimos, savolni boshqacha tarzda yozing yoki professional yurist bilan bog'laning.",
+      ru: 'К сожалению, по вашему запросу в нашей базе не найдена конкретная правовая информация. Пожалуйста, перефразируйте вопрос или обратитесь к профессиональному юристу.',
+      en: 'Unfortunately, no specific legal information was found in our database for your query. Please rephrase your question or consult with a professional lawyer.',
+    };
+
     const prefixes: Record<string, string> = {
       uz: "Sizning savolingiz bo'yicha topilgan huquqiy ma'lumotlar:",
       ru: 'По вашему вопросу найдена следующая правовая информация:',
@@ -228,6 +254,15 @@ export class AiService {
     };
 
     const citations = this.extractCitations(chunks);
+
+    if (chunks.length === 0) {
+      return {
+        answer: noResults[language] || noResults.ru,
+        citations,
+        model: 'keyword-search-fallback',
+        sources: 0,
+      };
+    }
 
     return {
       answer: `${prefixes[language] || prefixes.ru}\n\n${context}`,

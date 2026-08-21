@@ -113,6 +113,24 @@ export class LawyersService {
     return this.prisma.lawyer.delete({ where: { id } });
   }
 
+  async getReviewsBySlug(slug: string) {
+    const lawyer = await this.prisma.lawyer.findUnique({ where: { slug }, select: { id: true } });
+    if (!lawyer) throw new NotFoundException(`Lawyer "${slug}" not found`);
+    return this.prisma.review.findMany({
+      where: { lawyerId: lawyer.id, status: 'APPROVED' },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getServicesBySlug(slug: string) {
+    const lawyer = await this.prisma.lawyer.findUnique({ where: { slug }, select: { id: true } });
+    if (!lawyer) throw new NotFoundException(`Lawyer "${slug}" not found`);
+    return this.prisma.legalService.findMany({
+      where: { lawyerId: lawyer.id, isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async updateRating(lawyerId: string) {
     const stats = await this.prisma.review.aggregate({
       where: { lawyerId, status: 'APPROVED' },
