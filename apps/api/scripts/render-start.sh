@@ -2,14 +2,10 @@
 set -e
 
 echo "Pushing Prisma schema to database..."
-npx prisma db push
-
-echo "Cleaning fabricated data..."
-npx prisma db execute --file prisma/cleanup.sql --schema prisma/schema.prisma 2>&1 || echo "WARNING: Cleanup SQL had errors"
-echo "Cleanup step finished."
+npx prisma db push --accept-data-loss
 
 echo "Seeding database..."
-npx prisma db seed 2>&1 || echo "WARNING: Seed had errors"
+npx prisma db seed 2>&1 || echo "WARNING: Seed failed or already seeded, skipping"
 echo "Seed step finished."
 
 echo "Starting API server..."
