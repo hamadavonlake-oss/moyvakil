@@ -1,12 +1,15 @@
 #!/bin/bash
-set -e
 
-echo "Pushing Prisma schema to database..."
-npx prisma db push --accept-data-loss
-
-echo "Seeding database..."
-npx prisma db seed 2>&1 || echo "WARNING: Seed failed or already seeded, skipping"
-echo "Seed step finished."
+# Run DB setup in background so the server can start and pass health checks
+(
+  echo "Starting DB setup in background..."
+  npx prisma db push --accept-data-loss 2>&1 || echo "ERROR: prisma db push failed"
+  echo "DB push done. Running cleanup..."
+  npx prisma db execute --file prisma/cleanup.sql --schema prisma/schema.prisma 2>&1 || echo "WARNING: Cleanup had errors"
+  echo "Running seed..."
+  npx prisma db seed 2>&1 || echo "WARNING: Seed failed or already seeded"
+  echo "DB setup complete."
+) &
 
 echo "Starting API server..."
-node dist/main
+exec node dist/main
