@@ -156,11 +156,18 @@ async function main() {
     console.log(`Law: ${law.titleRu}`);
   }
 
-  // NOTE: Lawyers, Q&A questions/answers, reviews, guides, and services
-  // have been intentionally removed from the seed file.
-  // They contained fabricated data (fake names, fake credentials, invented legal advice,
-  // fake testimonials). All real data must be added through the admin panel
-  // or verified API endpoints with authentic information only.
+  // === 4. Clean up previously-seeded fabricated data ===
+  // Delete all rows from tables that previously contained invented content.
+  // Real data must be added through the admin panel or verified API endpoints.
+  await prisma.review.deleteMany();
+  await prisma.qaAnswer.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.legalService.deleteMany();
+  await prisma.lawyerPracticeArea.deleteMany();
+  await prisma.lawyerLanguage.deleteMany();
+  await prisma.lawyer.deleteMany();
+  await prisma.guide.deleteMany();
+  console.log('Cleaned up previously-seeded fabricated data');
 
   console.log('\nSeeding complete!');
 }
