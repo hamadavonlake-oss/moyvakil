@@ -56,12 +56,12 @@ export function Footer({ dict, locale }: FooterProps) {
             <h3 className="text-sm font-semibold text-text mb-4">{dict.footer.legal}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href={`/${locale}/laws/constitution-uz`} className="text-sm text-text-muted hover:text-primary">
-                  {locale === 'uz' ? 'Konstitusiya' : locale === 'ru' ? 'Конституция' : 'Constitution'}
+                <Link href={`/${locale}/laws`} className="text-sm text-text-muted hover:text-primary">
+                  {locale === 'uz' ? 'Qonunlar' : locale === 'ru' ? 'Законы' : 'Laws'}
                 </Link>
               </li>
               <li>
-                <span className="text-sm text-text-muted">{dict.footer.contact}: info@moyvakil.uz</span>
+                <span className="text-sm text-text-muted">{dict.footer.contact}: [TBD]</span>
               </li>
             </ul>
           </div>

@@ -98,9 +98,11 @@ export default async function LawsPage({
                           {law.adoptionDate}
                         </div>
                       )}
-                      <Badge variant="success" className="text-[10px]">
-                        {dict.laws.statusInForce}
-                      </Badge>
+                      {law.status && (
+                        <Badge variant={law.status === 'IN_FORCE' ? 'success' : law.status === 'AMENDED' ? 'warning' : law.status === 'REPEALED' ? 'danger' : 'outline'} className="text-[10px]">
+                          {law.status === 'IN_FORCE' ? dict.laws.statusInForce : law.status === 'AMENDED' ? dict.laws.statusAmended : law.status === 'REPEALED' ? dict.laws.statusRepealed : law.status}
+                        </Badge>
+                      )}
                     </div>
                     {law.sourceUrl && (
                       <div className="mt-3 flex items-center text-xs text-text-muted">

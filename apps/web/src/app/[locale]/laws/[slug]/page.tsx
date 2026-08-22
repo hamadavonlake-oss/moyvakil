@@ -27,19 +27,7 @@ const statusVariant: Record<string, string> = {
   DRAFT: 'outline',
 };
 
-// Fallback seed data
-const seedLaws: Record<string, LawDetail> = {
-  'constitution-uz': {
-    id: '1', slug: 'constitution-uz', titleUz: "O'zbekiston Respublikasining Konstitusiyasi", titleRu: 'Конституция Республики Узбекистан', titleEn: 'Constitution of the Republic of Uzbekistan',
-    type: 'CONSTITUTION', category: 'constitutional', status: 'IN_FORCE', adoptionDate: '1992-12-08', sourceUrl: 'https://lex.uz/docs/9531', lastUpdated: '2024-01-01T00:00:00Z',
-    fullTextUz: "O'zbekiston Respublikasi Konstitusiyasi — respublikaning asosiy qonuni hisoblanadi. Konstitusiya fuqarolar huquqlari va erkinliklarini kafolatlaydi, davlat hokimiyati tizimini belgilaydi.", 
-    fullTextRu: 'Конституция Республики Узбекистан является основным законом республики. Конституция гарантирует права и свободы граждан, определяет систему государственной власти.',
-    fullTextEn: 'The Constitution of the Republic of Uzbekistan is the fundamental law of the republic. It guarantees citizens\' rights and freedoms, defines the system of state power.',
-    summaryUz: "Asosiy qonun", summaryRu: 'Основной закон', summaryEn: 'Fundamental law',
-    articles: [], amendments: [],
-    country: { code: 'UZ', nameUz: "O'zbekiston", nameRu: 'Узбекистан' },
-  },
-};
+// No fallback seed data - show error page instead of serving fabricated content
 
 export async function generateMetadata({
   params,
@@ -70,8 +58,7 @@ export default async function LawDetailPage({
   try {
     law = await getLawBySlug(slug);
   } catch {
-    law = seedLaws[slug];
-    if (!law) notFound();
+    notFound();
   }
 
   const title = locale === 'uz' ? law.titleUz : locale === 'ru' ? law.titleRu : law.titleEn || law.titleRu;

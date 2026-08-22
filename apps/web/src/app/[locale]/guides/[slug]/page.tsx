@@ -8,17 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Clock, BookOpen } from 'lucide-react';
 import type { Metadata } from 'next';
 
-const seedGuides: Record<string, GuideDetail> = {
-  'uzbekistan-court-system': {
-    id: '1', slug: 'uzbekistan-court-system', titleUz: "O'zbekiston sud tizimi", titleRu: 'Судебная система Узбекистана', titleEn: 'Court System of Uzbekistan',
-    category: 'judicial', tags: ['courts', 'judiciary'], readingTime: 5, published: true, createdAt: '2024-01-01T00:00:00Z',
-    bodyUz: "O'zbekiston Respublikasining sud tizimi quyidagi tarkibiy qismlardan iborat:\n\n1. Konstitutsiyaviy sud — Konstitutsiyaning yuqori kuchiga ega ekanligini ta'minlaydi.\n2. Oliy sud — fuqarolik, jinoyat va boshqa ishlarni ko'rib chiqadi.\n3. Iqtisodiy sudlar — tadbirkorlik va iqtisodiy nizolarni hal qiladi.\n4. Jinoyat ishlari bo'yicha sudlar — jinoyat ishlarini ko'rib chiqadi.\n5. Fuqarolik ishlari bo'yicha sudlar — oila, mehnat, uy-joy va boshqa fuqarolik ishlarini ko'rib chiqadi.\n6. Xalq sudlari — mahalliy darajadagi oddiy ishlarni ko'rib chiqadi.",
-    bodyRu: 'Судебная система Республики Узбекистан состоит из следующих структурных элементов:\n\n1. Конституционный суд — обеспечивает верховенство Конституции.\n2. Верховный суд — рассматривает гражданские, уголовные и другие дела.\n3. Экономические суды — разрешают предпринимательские и экономические споры.\n4. Суды по уголовным делам — рассматривают уголовные дела.\n5. Суды по гражданским делам — рассматривают семейные, трудовые, жилищные и другие гражданские дела.\n6. Народные суды — рассматривают простые дела на местном уровне.',
-    bodyEn: 'The court system of the Republic of Uzbekistan consists of the following structural elements:\n\n1. Constitutional Court — ensures the supremacy of the Constitution.\n2. Supreme Court — considers civil, criminal and other cases.\n3. Economic Courts — resolve business and economic disputes.\n4. Criminal Courts — consider criminal cases.\n5. Civil Courts — consider family, labor, housing and other civil cases.\n6. People\'s Courts — consider simple cases at the local level.',
-    law: null,
-    country: { code: 'UZ', nameUz: "O'zbekiston", nameRu: 'Узбекистан', nameEn: 'Uzbekistan' },
-  },
-};
+// No fallback seed data - show error page instead of serving fabricated content
 
 export async function generateMetadata({
   params,
@@ -49,8 +39,7 @@ export default async function GuideDetailPage({
   try {
     guide = await getGuideBySlug(slug);
   } catch {
-    guide = seedGuides[slug];
-    if (!guide) notFound();
+    notFound();
   }
 
   const title = locale === 'uz' ? guide.titleUz : locale === 'ru' ? guide.titleRu : guide.titleEn || guide.titleRu;

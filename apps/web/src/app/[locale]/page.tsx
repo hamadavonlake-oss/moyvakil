@@ -61,10 +61,8 @@ export default async function HomePage({
   ];
 
   const stats = [
-    { value: '6+', label: locale === 'uz' ? "Asosiy qonunlar" : locale === 'ru' ? 'Основные законы' : 'Key Laws' },
-    { value: '100+', label: locale === 'uz' ? "Advokatlar" : locale === 'ru' ? 'Адвокаты' : 'Lawyers' },
-    { value: '3', label: locale === 'uz' ? "Tillar" : locale === 'ru' ? 'Языки' : 'Languages' },
-    { value: '24/7', label: locale === 'uz' ? "AI yurist" : locale === 'ru' ? 'AI юрист' : 'AI Lawyer' },
+    { value: '3', label: locale === 'uz' ? 'Tillar' : locale === 'ru' ? 'Языки' : 'Languages' },
+    { value: '6+', label: locale === 'uz' ? 'Asosiy qonunlar' : locale === 'ru' ? 'Основные законы' : 'Key Laws' },
   ];
 
   return (
@@ -92,7 +90,7 @@ export default async function HomePage({
       {/* Stats */}
       <section className="py-12 bg-surface-dim border-b border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 gap-8">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-3xl font-bold text-primary">{stat.value}</div>
@@ -146,17 +144,17 @@ export default async function HomePage({
             <Shield className="h-12 w-12 text-secondary mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-text mb-4">
               {locale === 'uz'
-                ? "Ishonchli huquqiy manba"
+                ? 'Huquqiy ma\'lumotlar platformasi'
                 : locale === 'ru'
-                ? 'Надёжный правовой источник'
-                : 'Trusted Legal Source'}
+                ? 'Платформа правовой информации'
+                : 'Legal Information Platform'}
             </h2>
             <p className="text-text-muted mb-8">
               {locale === 'uz'
-                ? "Ma'lumotlar rasmiy manbalar asosida yangilanadi va professional advokatlar tomonidan tekshiriladi"
+                ? 'Respublika qonunlari va huquqiy hujjatlar haqida ma\'lumot. [TBD: content verification workflow to be established]'
                 : locale === 'ru'
-                ? 'Информация обновляется на основе официальных источников и проверяется профессиональными адвокатами'
-                : 'Information is updated from official sources and verified by professional lawyers'}
+                ? 'Информация о законах и правовых документах республики. [TBD: content verification workflow to be established]'
+                : 'Information about republic laws and legal documents. [TBD: content verification workflow to be established]'}
             </p>
             <div className="flex items-center justify-center gap-4">
               <Button size="lg" asChild>
