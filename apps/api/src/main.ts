@@ -26,8 +26,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('MoyVakil API')
-    .setDescription('Central Asia Legal Platform API')
+    .setTitle('Vakilim API')
+    .setDescription('Legal Information Platform API')
     .setVersion('0.1.0')
     .addBearerAuth()
     .build();
@@ -37,7 +37,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`MoyVakil API running on http://localhost:${port}`);
+  console.log(`Vakilim API running on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/docs`);
 }
 bootstrap();
