@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, Scale, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { type Locale, locales, localeNames } from '@/lib/i18n';
 import { type Dictionary } from '@/lib/get-dictionary';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -21,11 +20,9 @@ export function Header({ dict, locale }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
 
   const navItems = [
-    { href: `/${locale}/laws`, label: dict.nav.laws },
-    { href: `/${locale}/lawyers`, label: dict.nav.lawyers },
-    { href: `/${locale}/qa`, label: dict.nav.qa },
-    { href: `/${locale}/guides`, label: dict.nav.guides },
-    { href: `/${locale}/ask-ai`, label: dict.nav.askAi },
+    { href: `/${locale}/documents`, label: dict.nav.documents },
+    { href: `/${locale}/chat`, label: dict.nav.chat },
+    { href: `/${locale}/search`, label: dict.nav.search },
   ];
 
   const switchLocale = (newLocale: Locale) => {
@@ -37,13 +34,11 @@ export function Header({ dict, locale }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
         <Link href={`/${locale}`} className="flex items-center gap-2">
           <Scale className="h-7 w-7 text-secondary" />
-          <span className="text-xl font-bold text-primary">MoyVakil</span>
+          <span className="text-xl font-bold text-primary">Vakilim</span>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <Link
@@ -56,9 +51,7 @@ export function Header({ dict, locale }: HeaderProps) {
           ))}
         </nav>
 
-        {/* Right side */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Locale Switcher */}
           <div className="flex items-center gap-1 rounded-md border border-border px-2 py-1">
             {locales.map((loc) => (
               <Link
@@ -77,7 +70,7 @@ export function Header({ dict, locale }: HeaderProps) {
 
           {isAuthenticated ? (
             <>
-              {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+              {(user?.role === 'admin' || user?.role === 'super_admin') && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/${locale}/admin`}>{dict.nav.admin}</Link>
                 </Button>
@@ -85,12 +78,6 @@ export function Header({ dict, locale }: HeaderProps) {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-surface-dim border border-border">
                 <User className="h-4 w-4 text-text-muted" />
                 <span className="text-sm font-medium text-text">{user?.name}</span>
-                {user?.role === 'LAWYER' && (
-                  <Badge variant="secondary" className="text-[10px]">{dict.auth.roleLawyer}</Badge>
-                )}
-                {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
-                  <Badge variant="outline" className="text-[10px]">{dict.auth.roleAdmin}</Badge>
-                )}
               </div>
               <Button variant="ghost" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-1" />
@@ -98,27 +85,17 @@ export function Header({ dict, locale }: HeaderProps) {
               </Button>
             </>
           ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/${locale}/auth`}>{dict.nav.login}</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href={`/${locale}/auth`}>{dict.nav.register}</Link>
-              </Button>
-            </>
+            <Button size="sm" asChild>
+              <Link href={`/${locale}/auth`}>{dict.nav.login}</Link>
+            </Button>
           )}
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          className="md:hidden p-2"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
+        <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile Nav */}
       {mobileOpen && (
         <div className="md:hidden border-t border-border bg-surface px-4 py-4 space-y-2">
           {navItems.map((item) => (
@@ -138,15 +115,6 @@ export function Header({ dict, locale }: HeaderProps) {
                   <User className="h-4 w-4 text-text-muted" />
                   <span className="font-medium">{user?.name}</span>
                 </div>
-                {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
-                  <Link
-                    href={`/${locale}/admin`}
-                    className="block px-3 py-2 text-sm font-medium text-text-muted hover:text-primary rounded-md hover:bg-surface-dim"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {dict.nav.admin}
-                  </Link>
-                )}
                 <button
                   onClick={() => { logout(); setMobileOpen(false); }}
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-muted hover:text-primary rounded-md hover:bg-surface-dim w-full"
@@ -156,14 +124,9 @@ export function Header({ dict, locale }: HeaderProps) {
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" asChild className="flex-1">
-                  <Link href={`/${locale}/auth`} onClick={() => setMobileOpen(false)}>{dict.nav.login}</Link>
-                </Button>
-                <Button size="sm" asChild className="flex-1">
-                  <Link href={`/${locale}/auth`} onClick={() => setMobileOpen(false)}>{dict.nav.register}</Link>
-                </Button>
-              </div>
+              <Button size="sm" asChild className="w-full">
+                <Link href={`/${locale}/auth`} onClick={() => setMobileOpen(false)}>{dict.nav.login}</Link>
+              </Button>
             )}
           </div>
           <div className="pt-2 flex gap-1">

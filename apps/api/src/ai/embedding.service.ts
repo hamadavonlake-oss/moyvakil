@@ -7,160 +7,73 @@ export class EmbeddingService {
 
   constructor(private prisma: PrismaService) {}
 
-  async indexAllLaws(countryId?: string) {
-    this.logger.log('Starting law indexing...');
+  async indexAllSections(countryId?: string) {
+    this.logger.log('Starting section indexing...');
 
     const where: any = {};
     if (countryId) where.countryId = countryId;
 
-    const laws = await this.prisma.law.findMany({
+    const sections = await this.prisma.legalSection.findMany({
       where,
-      include: { articles: true },
+      include: {
+        document: { select: { id: true, title: true, documentType: true, languageCode: true } },
+      },
+      take: 500,
     });
 
     let indexed = 0;
-    for (const law of laws) {
+    for (const section of sections) {
       try {
-        await this.indexLaw(law);
+        await this.indexSection(section);
         indexed++;
       } catch (error) {
-        this.logger.error(`Failed to index law ${law.slug}: ${error.message}`);
+        this.logger.error(`Failed to index section ${section.id}: ${error.message}`);
       }
     }
 
-    this.logger.log(`Indexed ${indexed}/${laws.length} laws`);
-    return { indexed, total: laws.length };
+    this.logger.log(`Indexed ${indexed}/${sections.length} sections`);
+    return { indexed, total: sections.length };
   }
 
-  async indexLaw(law: any) {
-    // Remove existing embeddings for this law using raw SQL
-    await this.prisma.$executeRaw`DELETE FROM legal_embeddings WHERE content_id = ${law.id} AND content_type = 'law'`;
+  async indexSection(section: any) {
+    await this.prisma.embedding.deleteMany({ where: { sectionId: section.id } });
 
-    const chunks: string[] = [];
-
-    if (law.summaryUz) chunks.push(`[${law.titleUz}] ${law.summaryUz}`);
-    if (law.summaryRu) chunks.push(`[${law.titleRu}] ${law.summaryRu}`);
-    if (law.summaryEn) chunks.push(`[${law.titleEn}] ${law.summaryEn}`);
-
-    if (law.fullTextRu) {
-      chunks.push(...this.chunkText(law.fullTextRu, 1000).map((t) => `[${law.titleRu}] ${t}`));
-    }
-    if (law.fullTextUz) {
-      chunks.push(...this.chunkText(law.fullTextUz, 1000).map((t) => `[${law.titleUz}] ${t}`));
-    }
-
-    for (const article of law.articles || []) {
-      const articleText = `[${law.titleRu}, ${article.number}] ${article.contentRu || article.contentUz || ''}`;
-      chunks.push(articleText);
-    }
+    const text = section.textNormalized || section.textOriginal || '';
+    const chunks = this.chunkText(text, 1000);
 
     for (const chunk of chunks) {
       const embedding = await this.getEmbedding(chunk);
       if (!embedding) continue;
 
       const embeddingStr = `[${embedding.join(',')}]`;
-      const metadata = JSON.stringify({
-        titleUz: law.titleUz,
-        titleRu: law.titleRu,
-        titleEn: law.titleEn,
-        slug: law.slug,
-        category: law.category,
-        type: law.type,
-        countryId: law.countryId,
-      });
-
       await this.prisma.$executeRaw`
-        INSERT INTO legal_embeddings (id, content_id, content_type, chunk, embedding, metadata, created_at)
-        VALUES (gen_random_uuid()::text, ${law.id}, 'law', ${chunk.substring(0, 5000)}::text, ${embeddingStr}::vector, ${metadata}::jsonb, NOW())
+        INSERT INTO "Embedding" (id, "sectionId", embedding, "modelName", dimensions, "createdAt")
+        VALUES (gen_random_uuid()::text, ${section.id}, ${embeddingStr}::vector, 'text-embedding-3-small', 1536, NOW())
       `;
     }
 
-    this.logger.log(`Indexed law: ${law.slug} (${chunks.length} chunks)`);
-  }
-
-  async indexAllGuides(countryId?: string) {
-    this.logger.log('Starting guide indexing...');
-
-    const where: any = { published: true };
-    if (countryId) where.countryId = countryId;
-
-    const guides = await this.prisma.guide.findMany({ where });
-    let indexed = 0;
-
-    for (const guide of guides) {
-      try {
-        await this.indexGuide(guide);
-        indexed++;
-      } catch (error) {
-        this.logger.error(`Failed to index guide ${guide.slug}: ${error.message}`);
-      }
-    }
-
-    this.logger.log(`Indexed ${indexed}/${guides.length} guides`);
-    return { indexed, total: guides.length };
-  }
-
-  async indexGuide(guide: any) {
-    await this.prisma.$executeRaw`DELETE FROM legal_embeddings WHERE content_id = ${guide.id} AND content_type = 'guide'`;
-
-    const chunks: string[] = [];
-    if (guide.bodyRu) chunks.push(...this.chunkText(guide.bodyRu, 1000).map((t) => `[${guide.titleRu}] ${t}`));
-    if (guide.bodyUz) chunks.push(...this.chunkText(guide.bodyUz, 1000).map((t) => `[${guide.titleUz}] ${t}`));
-
-    for (const chunk of chunks) {
-      const embedding = await this.getEmbedding(chunk);
-      if (!embedding) continue;
-
-      const embeddingStr = `[${embedding.join(',')}]`;
-      const metadata = JSON.stringify({
-        titleUz: guide.titleUz,
-        titleRu: guide.titleRu,
-        titleEn: guide.titleEn,
-        slug: guide.slug,
-        category: guide.category,
-        countryId: guide.countryId,
-      });
-
-      await this.prisma.$executeRaw`
-        INSERT INTO legal_embeddings (id, content_id, content_type, chunk, embedding, metadata, created_at)
-        VALUES (gen_random_uuid()::text, ${guide.id}, 'guide', ${chunk.substring(0, 5000)}::text, ${embeddingStr}::vector, ${metadata}::jsonb, NOW())
-      `;
-    }
-
-    this.logger.log(`Indexed guide: ${guide.slug} (${chunks.length} chunks)`);
+    this.logger.log(`Indexed section: ${section.id} (${chunks.length} chunks)`);
   }
 
   async getStats() {
-    try {
-      const result = await this.prisma.$queryRaw`
-        SELECT content_type as "contentType", COUNT(*) as count
-        FROM legal_embeddings
-        GROUP BY content_type
-      ` as any[];
+    const result = await this.prisma.embedding.groupBy({
+      by: ['modelName'],
+      _count: true,
+    });
 
-      const total = result.reduce((sum: number, r: any) => sum + Number(r.count), 0);
-      return { total, byType: result };
-    } catch {
-      return { total: 0, byType: [], note: 'Vector search not available (pgvector extension required)' };
-    }
+    const total = result.reduce((sum, r) => sum + r._count, 0);
+    return { total, byModel: result };
   }
 
   async clearAll() {
-    try {
-      const result = await this.prisma.$executeRaw`DELETE FROM legal_embeddings`;
-      return { deleted: Number(result) };
-    } catch {
-      return { deleted: 0, note: 'Vector search not available (pgvector extension required)' };
-    }
+    const result = await this.prisma.embedding.deleteMany();
+    return { deleted: result.count };
   }
-
-  // === HELPERS ===
 
   private chunkText(text: string, maxChars: number): string[] {
     if (!text) return [];
     const chunks: string[] = [];
     const paragraphs = text.split('\n\n');
-
     let current = '';
     for (const para of paragraphs) {
       if (current.length + para.length > maxChars && current.length > 0) {
@@ -170,7 +83,6 @@ export class EmbeddingService {
       current += para + '\n\n';
     }
     if (current.trim()) chunks.push(current.trim());
-
     return chunks;
   }
 
@@ -194,10 +106,7 @@ export class EmbeddingService {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Embedding API error: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Embedding API error: ${response.status}`);
       const data = await response.json();
       return data.data[0].embedding;
     } catch (error) {

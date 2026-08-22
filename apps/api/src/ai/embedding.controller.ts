@@ -3,36 +3,19 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EmbeddingService } from './embedding.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
 
 @ApiTags('Embeddings')
 @Controller('ai/embeddings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_ADMIN)
+@Roles('super_admin')
 @ApiBearerAuth()
 export class EmbeddingController {
   constructor(private embeddingService: EmbeddingService) {}
 
-  @Post('index-laws')
-  @ApiOperation({ summary: 'Index all laws into vector store (super admin)' })
-  indexLaws() {
-    return this.embeddingService.indexAllLaws();
-  }
-
-  @Post('index-guides')
-  @ApiOperation({ summary: 'Index all guides into vector store (super admin)' })
-  indexGuides() {
-    return this.embeddingService.indexAllGuides();
-  }
-
-  @Post('index-all')
-  @ApiOperation({ summary: 'Index all content into vector store (super admin)' })
-  async indexAll() {
-    const [laws, guides] = await Promise.all([
-      this.embeddingService.indexAllLaws(),
-      this.embeddingService.indexAllGuides(),
-    ]);
-    return { laws, guides };
+  @Post('index-sections')
+  @ApiOperation({ summary: 'Index all legal sections into vector store (super admin)' })
+  indexSections() {
+    return this.embeddingService.indexAllSections();
   }
 
   @Get('stats')

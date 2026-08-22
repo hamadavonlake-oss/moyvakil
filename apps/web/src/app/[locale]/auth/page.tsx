@@ -43,8 +43,8 @@ export default function AuthPage() {
 
       // Store token
       if (data.access_token) {
-        localStorage.setItem('moyvakil_token', data.access_token);
-        localStorage.setItem('moyvakil_user', JSON.stringify(data.user));
+        localStorage.setItem('vakilim_token', data.access_token);
+        localStorage.setItem('vakilim_user', JSON.stringify(data.user));
       }
 
       router.push('/');

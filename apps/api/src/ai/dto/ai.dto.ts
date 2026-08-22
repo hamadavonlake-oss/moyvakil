@@ -11,10 +11,10 @@ export class AskDto {
   @IsOptional()
   language?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'UZ' })
   @IsString()
   @IsOptional()
-  countryId?: string;
+  countryCode?: string;
 }
 
 export class ChatDto {
@@ -27,10 +27,10 @@ export class ChatDto {
   @IsOptional()
   language?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'UZ' })
   @IsString()
   @IsOptional()
-  countryId?: string;
+  countryCode?: string;
 }
 
 export class EmbedContentDto {

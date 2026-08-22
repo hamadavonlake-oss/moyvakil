@@ -15,7 +15,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-    next: { revalidate: 60 }, // ISR: revalidate every 60s for server components
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -25,50 +25,57 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-// === Laws ===
-export interface LawSummary {
+// === Legal Documents ===
+export interface LegalDocumentSummary {
   id: string;
-  slug: string;
-  titleUz: string;
-  titleRu: string;
-  titleEn?: string;
-  type: string;
-  category: string;
+  title: string;
+  documentType: string;
   status: string;
-  adoptionDate?: string;
-  sourceUrl?: string;
-  lastUpdated: string;
-  country: { code: string; nameUz: string; nameRu: string };
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  languageCode: string;
+  createdAt: string;
+  source?: { authorityName: string; officialUrl: string };
+  _count?: { sections: number; versions: number };
 }
 
-export interface LawDetail extends LawSummary {
-  fullTextUz: string;
-  fullTextRu: string;
-  fullTextEn?: string;
-  summaryUz?: string;
-  summaryRu?: string;
-  summaryEn?: string;
-  effectiveDate?: string;
-  articles: LawArticle[];
-  amendments: LawAmendment[];
+export interface LegalDocumentDetail extends LegalDocumentSummary {
+  contentHash: string;
+  lastIndexedAt?: string;
+  country: { id: string; code: string; nameUz: string; nameRu: string; nameEn: string };
+  jurisdiction?: { id: string; code: string; name: string };
+  source: { id: string; authorityName: string; officialUrl: string; documentType: string };
+  versions: LegalVersion[];
+  sections: LegalSectionSummary[];
 }
 
-export interface LawArticle {
+export interface LegalVersion {
   id: string;
-  number: string;
-  titleUz?: string;
-  titleRu?: string;
-  titleEn?: string;
-  contentUz: string;
-  contentRu: string;
-  contentEn?: string;
+  versionNumber: number;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  status: string;
+  sourceUrl?: string;
 }
 
-export interface LawAmendment {
+export interface LegalSectionSummary {
   id: string;
-  description: string;
-  date: string;
-  sourceUrl?: string;
+  sectionType: string;
+  sectionLabel?: string;
+  ordinal: number;
+  status: string;
+  effectiveFrom?: string;
+}
+
+export interface LegalSectionDetail extends LegalSectionSummary {
+  textOriginal: string;
+  textNormalized: string;
+  sourceUrl: string;
+  sourceStartOffset?: number;
+  sourceEndOffset?: number;
+  languageCode: string;
+  countryCode: string;
+  document: { id: string; title: string; documentType: string };
 }
 
 export interface PaginatedResponse<T> {
@@ -78,15 +85,15 @@ export interface PaginatedResponse<T> {
   limit: number;
 }
 
-export async function getLaws(params?: {
+export async function getDocuments(params?: {
   q?: string;
-  category?: string;
-  type?: string;
-  status?: string;
   countryId?: string;
+  documentType?: string;
+  status?: string;
+  language?: string;
   page?: number;
   limit?: number;
-}): Promise<PaginatedResponse<LawSummary>> {
+}): Promise<PaginatedResponse<LegalDocumentSummary>> {
   const searchParams = new URLSearchParams();
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -97,203 +104,161 @@ export async function getLaws(params?: {
   return apiFetch(`/laws${qs ? `?${qs}` : ''}`);
 }
 
-export async function getLawBySlug(slug: string): Promise<LawDetail> {
-  return apiFetch(`/laws/${slug}`);
+export async function getDocumentById(id: string): Promise<LegalDocumentDetail> {
+  return apiFetch(`/laws/${id}`);
 }
 
-// === Lawyers ===
-export interface LawyerSummary {
+export async function getDocumentSections(
+  documentId: string,
+  params?: { sectionType?: string; page?: number; limit?: number },
+): Promise<PaginatedResponse<LegalSectionSummary>> {
+  const searchParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) searchParams.set(key, String(value));
+    });
+  }
+  const qs = searchParams.toString();
+  return apiFetch(`/laws/${documentId}/sections${qs ? `?${qs}` : ''}`);
+}
+
+export async function getSectionById(id: string): Promise<LegalSectionDetail> {
+  return apiFetch(`/sections/${id}`);
+}
+
+// === Search ===
+export interface SearchParams {
+  q: string;
+  countryCode?: string;
+  documentType?: string;
+  sectionType?: string;
+  language?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface SearchResult {
   id: string;
-  slug: string;
-  firstName: string;
-  lastName: string;
-  photoUrl?: string;
-  city: string;
-  region?: string;
-  yearsOfPractice?: number;
-  avgRating: number;
-  reviewCount: number;
-  isVerified: boolean;
-  licenseVerified: boolean;
-  practiceAreas: { area: string }[];
-  languages: { language: string }[];
-  country: { code: string };
-}
-
-export interface LawyerDetail extends LawyerSummary {
-  phone?: string;
-  email?: string;
-  website?: string;
-  licenseNumber?: string;
-  education?: string;
-  bioUz?: string;
-  bioRu?: string;
-  bioEn?: string;
-  reviews: Review[];
-  services: LegalService[];
-}
-
-export interface Review {
-  id: string;
-  authorName: string;
-  rating: number;
-  title?: string;
-  content: string;
+  sectionType: string;
+  sectionLabel?: string;
+  ordinal: number;
+  textNormalized: string;
+  sourceUrl: string;
   status: string;
-  createdAt: string;
-}
-
-export interface LegalService {
-  id: string;
-  titleUz: string;
-  titleRu: string;
-  titleEn?: string;
-  descriptionUz: string;
-  descriptionRu: string;
-  price: string;
-  currency: string;
-  deliveryDays: number;
-  category: string;
-}
-
-export async function getLawyers(params?: {
-  q?: string;
-  city?: string;
-  practiceArea?: string;
-  language?: string;
-  verified?: boolean;
-  countryId?: string;
-  minRating?: number;
-  page?: number;
-  limit?: number;
-}): Promise<PaginatedResponse<LawyerSummary>> {
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) searchParams.set(key, String(value));
-    });
-  }
-  const qs = searchParams.toString();
-  return apiFetch(`/lawyers${qs ? `?${qs}` : ''}`);
-}
-
-export async function getLawyerBySlug(slug: string): Promise<LawyerDetail> {
-  return apiFetch(`/lawyers/${slug}`);
-}
-
-// === Q&A ===
-export interface QuestionSummary {
-  id: string;
-  title: string;
-  body: string;
-  category: string;
-  region?: string;
-  language: string;
-  authorName: string;
-  viewCount: number;
-  answerCount: number;
-  isResolved: boolean;
-  createdAt: string;
-  _count?: { answers: number };
-}
-
-export interface QuestionDetail extends QuestionSummary {
-  answers: QaAnswer[];
-}
-
-export interface QaAnswer {
-  id: string;
-  body: string;
-  isHelpful: boolean;
-  upvotes: number;
-  createdAt: string;
-  lawyer?: {
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  document: {
     id: string;
-    firstName: string;
-    lastName: string;
-    slug: string;
-    photoUrl?: string;
-    isVerified: boolean;
-  } | null;
+    title: string;
+    documentType: string;
+    status: string;
+    source?: { authorityName: string; officialUrl: string };
+  };
 }
 
-export async function getQuestions(params?: {
-  category?: string;
-  region?: string;
-  language?: string;
-  countryId?: string;
-  q?: string;
-  page?: number;
-  limit?: number;
-}): Promise<PaginatedResponse<QuestionSummary>> {
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) searchParams.set(key, String(value));
-    });
-  }
-  const qs = searchParams.toString();
-  return apiFetch(`/qa/questions${qs ? `?${qs}` : ''}`);
-}
-
-export async function getQuestionById(id: string): Promise<QuestionDetail> {
-  return apiFetch(`/qa/questions/${id}`);
-}
-
-// === Guides ===
-export interface GuideSummary {
-  id: string;
-  slug: string;
-  titleUz: string;
-  titleRu: string;
-  titleEn?: string;
-  category: string;
-  tags: string[];
-  readingTime?: number;
-  createdAt: string;
-  country: { code: string };
-}
-
-export interface GuideDetail extends GuideSummary {
-  bodyUz: string;
-  bodyRu: string;
-  bodyEn?: string;
-  published: boolean;
-  law?: { id: string; slug: string; titleUz: string; titleRu: string } | null;
-  country: { code: string; nameUz: string; nameRu: string; nameEn?: string };
-}
-
-export async function getGuides(params?: {
-  category?: string;
-  q?: string;
-  countryId?: string;
-  page?: number;
-  limit?: number;
-}): Promise<PaginatedResponse<GuideSummary>> {
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) searchParams.set(key, String(value));
-    });
-  }
-  const qs = searchParams.toString();
-  return apiFetch(`/guides${qs ? `?${qs}` : ''}`);
-}
-
-export async function getGuideBySlug(slug: string): Promise<GuideDetail> {
-  return apiFetch(`/guides/${slug}`);
-}
-
-// === AI ===
-export async function askAi(question: string, language = 'ru', countryId?: string) {
-  return apiFetch<{
-    answer: string;
-    citations: Array<{ type: string; id: string; title: string; slug: string }>;
-    model: string;
-  }>('/ai/ask', {
+export async function searchLegal(params: SearchParams): Promise<PaginatedResponse<SearchResult>> {
+  return apiFetch('/search/legal', {
     method: 'POST',
-    body: JSON.stringify({ question, language, countryId }),
+    body: JSON.stringify(params),
   });
+}
+
+// === Chat ===
+export interface Conversation {
+  id: string;
+  countryCode: string;
+  language: string;
+  title?: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { messages: number };
+  messages?: ChatMessage[];
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+  answer?: AiAnswer;
+}
+
+export interface AiAnswer {
+  id: string;
+  jurisdiction: string;
+  language: string;
+  shortAnswer: string;
+  answer: string;
+  assumptions: string[];
+  missingFacts: string[];
+  nextSteps: string[];
+  riskLevel: string;
+  needsHumanReview: boolean;
+  confidence: number;
+  disclaimer: string;
+  citations: Citation[];
+}
+
+export interface Citation {
+  id: string;
+  sourceId?: string;
+  sectionId?: string;
+  title: string;
+  article?: string;
+  url?: string;
+  effectiveDate?: string;
+  status?: string;
+  quotedText?: string;
+}
+
+export async function createConversation(countryCode: string, language = 'uz') {
+  return apiFetch<Conversation>('/chat/sessions', {
+    method: 'POST',
+    body: JSON.stringify({ countryCode, language }),
+  });
+}
+
+export async function listConversations() {
+  return apiFetch<Conversation[]>('/chat/sessions');
+}
+
+export async function getConversation(id: string) {
+  return apiFetch<Conversation>(`/chat/sessions/${id}`);
+}
+
+export async function sendMessage(conversationId: string, content: string) {
+  return apiFetch<{ userMessage: ChatMessage; assistantMessage: ChatMessage; answer: AiAnswer }>(
+    `/chat/sessions/${conversationId}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    },
+  );
+}
+
+// === Jurisdictions ===
+export interface Country {
+  id: string;
+  code: string;
+  nameUz: string;
+  nameRu: string;
+  nameEn: string;
+}
+
+export interface Language {
+  id: string;
+  code: string;
+  name: string;
+  direction: string;
+}
+
+export async function getCountries() {
+  return apiFetch<Country[]>('/jurisdictions/countries');
+}
+
+export async function getLanguages() {
+  return apiFetch<Language[]>('/jurisdictions/languages');
 }
 
 // === Auth ===
@@ -304,9 +269,17 @@ export async function loginUser(email: string, password: string) {
   );
 }
 
-export async function registerUser(email: string, password: string, name: string, role?: string) {
+export async function registerUser(email: string, password: string, name: string) {
   return apiFetch<{ access_token: string; user: { id: string; email: string; name: string; role: string } }>(
     '/auth/register',
-    { method: 'POST', body: JSON.stringify({ email, password, name, role }) },
+    { method: 'POST', body: JSON.stringify({ email, password, name }) },
   );
+}
+
+// === AI (direct, no conversation) ===
+export async function askAi(question: string, language = 'ru', countryCode?: string) {
+  return apiFetch<AiAnswer>('/ai/ask', {
+    method: 'POST',
+    body: JSON.stringify({ question, language, countryCode }),
+  });
 }

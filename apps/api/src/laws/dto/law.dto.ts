@@ -1,61 +1,153 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  IsIn,
+  IsDateString,
+  IsInt,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/swagger';
 
-export class CreateLawDto {
-  @ApiPropertyOptional() @IsString() titleUz: string;
-  @ApiPropertyOptional() @IsString() titleRu: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() titleEn?: string;
-  @ApiPropertyOptional() @IsString() slug: string;
-  @ApiPropertyOptional() @IsString() fullTextUz: string;
-  @ApiPropertyOptional() @IsString() fullTextRu: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() fullTextEn?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryUz?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryRu?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryEn?: string;
-  @ApiPropertyOptional({ enum: ['CONSTITUTION', 'CODE', 'LAW', 'DECREE', 'REGULATION'] })
-  @IsEnum(['CONSTITUTION', 'CODE', 'LAW', 'DECREE', 'REGULATION'])
-  type: string;
-  @ApiPropertyOptional() @IsString() category: string;
-  @ApiPropertyOptional({ enum: ['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'] })
+export const DOCUMENT_STATUSES = [
+  'current',
+  'amended',
+  'repealed',
+  'draft',
+  'future_effective',
+] as const;
+
+export const SECTION_TYPES = [
+  'chapter',
+  'article',
+  'paragraph',
+  'subparagraph',
+  'section',
+  'definition',
+  'tbl',
+  'annex',
+  'footnote',
+] as const;
+
+export class LegalDocumentQueryDto {
+  @ApiPropertyOptional({ description: 'Free-text search on title' })
+  @IsString()
   @IsOptional()
-  @IsEnum(['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'])
+  q?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by country id' })
+  @IsString()
+  @IsOptional()
+  countryId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by document type' })
+  @IsString()
+  @IsOptional()
+  documentType?: string;
+
+  @ApiPropertyOptional({ enum: DOCUMENT_STATUSES })
+  @IsOptional()
+  @IsIn(DOCUMENT_STATUSES)
   status?: string;
-  @ApiPropertyOptional() @IsDateString() @IsOptional() adoptionDate?: string;
-  @ApiPropertyOptional() @IsDateString() @IsOptional() effectiveDate?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() sourceUrl?: string;
-  @ApiPropertyOptional() @IsString() countryId: string;
+
+  @ApiPropertyOptional({ description: 'Filter by language code, e.g. uz, ru' })
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional({ default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1;
+
+  @ApiPropertyOptional({ default: 20 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number = 20;
 }
 
-export class UpdateLawDto {
-  @ApiPropertyOptional() @IsString() @IsOptional() titleUz?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() titleRu?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() titleEn?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() fullTextUz?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() fullTextRu?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() fullTextEn?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryUz?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryRu?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() summaryEn?: string;
-  @ApiPropertyOptional({ enum: ['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'] })
+export class SectionQueryDto {
+  @ApiPropertyOptional({ enum: SECTION_TYPES })
   @IsOptional()
-  @IsEnum(['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'])
-  status?: string;
-  @ApiPropertyOptional() @IsDateString() @IsOptional() adoptionDate?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() sourceUrl?: string;
+  @IsIn(SECTION_TYPES)
+  sectionType?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by legal version id' })
+  @IsString()
+  @IsOptional()
+  versionId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by language code' })
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional({ default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1;
+
+  @ApiPropertyOptional({ default: 50 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number = 50;
 }
 
-export class LawQueryDto {
-  @ApiPropertyOptional() @IsString() @IsOptional() q?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() category?: string;
-  @ApiPropertyOptional({ enum: ['CONSTITUTION', 'CODE', 'LAW', 'DECREE', 'REGULATION'] })
+export class CreateLegalDocumentDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  sourceId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  countryId: string;
+
+  @ApiPropertyOptional()
+  @IsString()
   @IsOptional()
-  @IsEnum(['CONSTITUTION', 'CODE', 'LAW', 'DECREE', 'REGULATION'])
-  type?: string;
-  @ApiPropertyOptional({ enum: ['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'] })
+  jurisdictionId?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @ApiProperty({ example: 'law' })
+  @IsString()
+  @IsNotEmpty()
+  documentType: string;
+
+  @ApiPropertyOptional({ enum: DOCUMENT_STATUSES, default: 'current' })
   @IsOptional()
-  @IsEnum(['IN_FORCE', 'AMENDED', 'REPEALED', 'DRAFT'])
+  @IsIn(DOCUMENT_STATUSES)
   status?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() countryId?: string;
-  @ApiPropertyOptional() @IsOptional() page?: number;
-  @ApiPropertyOptional() @IsOptional() limit?: number;
+
+  @ApiPropertyOptional({ format: 'date-time' })
+  @IsDateString()
+  @IsOptional()
+  effectiveFrom?: string;
+
+  @ApiPropertyOptional({ format: 'date-time' })
+  @IsDateString()
+  @IsOptional()
+  effectiveTo?: string;
+
+  @ApiPropertyOptional({ default: 'uz' })
+  @IsString()
+  @IsOptional()
+  languageCode?: string;
 }
+
+export class UpdateLegalDocumentDto extends PartialType(CreateLegalDocumentDto) {}

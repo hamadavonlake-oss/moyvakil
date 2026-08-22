@@ -1,89 +1,72 @@
 {
   "nav": {
     "home": "Home",
-    "laws": "Laws",
-    "lawyers": "Lawyers",
-    "qa": "Q&A",
-    "guides": "Guides",
-    "askAi": "AI Lawyer",
+    "documents": "Legal Documents",
+    "chat": "AI Assistant",
+    "search": "Search",
     "login": "Login",
     "register": "Register",
-    "admin": "Admin Panel"
+    "admin": "Admin"
   },
   "hero": {
     "title": "Understand Your Rights",
-    "subtitle": "A reliable source of Uzbekistan legal information and a place to find professional lawyers",
-    "searchPlaceholder": "Search laws or questions...",
-    "cta": "Learn More",
-    "searchLawyers": "Lawyers",
-    "searchLaws": "Laws",
-    "searchGuides": "Guides"
+    "subtitle": "Cited legal answers grounded in official sources. Find the authoritative rule, understand it in your language, apply it to your facts.",
+    "searchPlaceholder": "Search legal documents...",
+    "cta": "Ask AI Assistant"
   },
-  "laws": {
-    "title": "Laws & Codes",
-    "subtitle": "Key laws and legal documents of the Republic of Uzbekistan",
+  "documents": {
+    "title": "Legal Documents",
+    "subtitle": "Official legislation and legal documents of the Republic of Uzbekistan",
     "filterAll": "All",
     "filterConstitution": "Constitution",
     "filterCode": "Codes",
     "filterLaw": "Laws",
-    "noResults": "No laws found",
+    "noResults": "No documents found",
     "lastUpdated": "Last updated",
     "status": "Status",
-    "statusInForce": "In Force",
+    "statusCurrent": "Current",
     "statusAmended": "Amended",
-    "statusRepealed": "Repealed"
+    "statusRepealed": "Repealed",
+    "statusDraft": "Draft",
+    "sections": "Sections",
+    "versions": "Version History",
+    "effectiveFrom": "Effective from",
+    "effectiveTo": "Effective until",
+    "source": "Source"
   },
-  "lawyers": {
-    "title": "Lawyer Directory",
-    "subtitle": "Professional lawyers and law firms in Uzbekistan",
-    "filterCity": "City",
-    "filterPractice": "Practice Area",
-    "filterLanguage": "Language",
-    "filterVerified": "Verified Lawyers",
-    "allCities": "All Cities",
-    "allAreas": "All Practice Areas",
-    "yearsExp": "years experience",
-    "reviews": "reviews",
-    "verified": "Verified",
-    "noResults": "No lawyers found"
-  },
-  "qa": {
-    "title": "Questions & Answers",
-    "subtitle": "Answers to questions from other users and professional legal advice",
-    "askQuestion": "Ask a Question",
-    "askTitle": "New Question",
-    "askPlaceholder": "Write your question...",
-    "askBodyPlaceholder": "Describe your question in detail...",
-    "askCategory": "Category",
-    "askSubmit": "Submit Question",
-    "askLoginRequired": "Sign in to ask a question",
-    "answerTitle": "Write an Answer",
-    "answerPlaceholder": "Write your answer...",
-    "answerSubmit": "Submit Answer",
-    "answerLoginRequired": "Sign in to answer",
-    "noQuestions": "No questions yet",
-    "beFirst": "Be the first!",
-    "answers": "answers",
-    "views": "views",
-    "helpful": "Helpful",
-    "writeAnswer": "Write your answer...",
-    "submitAnswer": "Submit",
-    "loginToAnswer": "Sign in to answer",
-    "loginToAsk": "Sign in to ask a question"
-  },
-  "guides": {
-    "title": "Legal Guides",
-    "subtitle": "Legal advice and instructions explained in plain language",
-    "readTime": "min read",
-    "noResults": "No guides found"
-  },
-  "ai": {
-    "title": "AI Lawyer",
-    "subtitle": "Get answers to your legal questions with the help of artificial intelligence",
+  "chat": {
+    "title": "AI Legal Assistant",
+    "subtitle": "Ask a legal question and get cited answers grounded in official sources",
     "placeholder": "Type your legal question...",
     "send": "Send",
     "thinking": "Thinking...",
-    "disclaimer": "This is an automated response. Consult a professional lawyer."
+    "newChat": "New Chat",
+    "conversations": "Your Conversations",
+    "noConversations": "No conversations yet",
+    "countryPrompt": "Select your country first",
+    "sources": "Sources",
+    "nextSteps": "Next Steps",
+    "assumptions": "Assumptions",
+    "missingFacts": "Missing Information",
+    "confidence": "Confidence",
+    "riskLevel": "Risk Level",
+    "humanReview": "Recommend professional review",
+    "disclaimer": "This is automated legal information, not professional legal advice. Consult a qualified lawyer for specific matters."
+  },
+  "search": {
+    "title": "Legal Search",
+    "subtitle": "Search across legal documents, sections, and provisions",
+    "placeholder": "Search by keyword, article number, or topic...",
+    "results": "Search Results",
+    "noResults": "No results found",
+    "filters": "Filters",
+    "documentType": "Document Type",
+    "sectionType": "Section Type",
+    "country": "Country",
+    "language": "Language",
+    "status": "Status",
+    "showing": "Showing",
+    "of": "of"
   },
   "auth": {
     "login": "Login",
@@ -99,20 +82,11 @@
     "registerLink": "Sign Up",
     "loggedIn": "Logged in",
     "logout": "Logout",
-    "welcome": "Welcome",
-    "roleLawyer": "Lawyer",
-    "roleAdmin": "Admin"
+    "welcome": "Welcome"
   },
-  "reviews": {
-    "writeReview": "Write a Review",
-    "rating": "Rating",
-    "title": "Title",
-    "titlePlaceholder": "Review title",
-    "content": "Review",
-    "contentPlaceholder": "Write your review...",
-    "submit": "Submit Review",
-    "loginRequired": "Sign in to write a review",
-    "titlePlaceholderReview": "Excellent / Professional / Recommended..."
+  "jurisdictions": {
+    "selectCountry": "Select Country",
+    "selectLanguage": "Select Language"
   },
   "notFound": {
     "title": "Page Not Found",
@@ -146,8 +120,8 @@
     "optional": "Optional"
   },
   "footer": {
-    "about": "About MoyVakil",
-    "aboutText": "A legal information platform for Uzbekistan. [TBD: content verification workflow to be established]",
+    "about": "About Vakilim",
+    "aboutText": "A legal information platform providing cited answers grounded in official Uzbekistan legislation.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
     "contact": "Contact",

@@ -6,63 +6,50 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async getStats() {
-    const [lawCount, lawyerCount, questionCount, reviewPendingCount, guideCount] = await Promise.all([
-      this.prisma.law.count(),
-      this.prisma.lawyer.count(),
-      this.prisma.question.count(),
-      this.prisma.review.count({ where: { status: 'PENDING' } }),
-      this.prisma.guide.count(),
+    const [documentCount, sourceCount, userCount] = await Promise.all([
+      this.prisma.legalDocument.count(),
+      this.prisma.legalSource.count(),
+      this.prisma.user.count(),
     ]);
 
     return {
-      laws: lawCount,
-      lawyers: lawyerCount,
-      questions: questionCount,
-      pendingReviews: reviewPendingCount,
-      guides: guideCount,
+      documents: documentCount,
+      sources: sourceCount,
+      users: userCount,
     };
   }
 
-  async getAllLaws() {
-    return this.prisma.law.findMany({
+  async getAllDocuments() {
+    return this.prisma.legalDocument.findMany({
       select: {
         id: true,
-        slug: true,
-        titleUz: true,
-        titleRu: true,
-        type: true,
-        category: true,
+        title: true,
+        documentType: true,
         status: true,
-        lastUpdated: true,
+        effectiveFrom: true,
+        effectiveTo: true,
+        createdAt: true,
+        source: {
+          select: { authorityName: true, officialUrl: true },
+        },
       },
-      orderBy: { lastUpdated: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async getAllLawyers() {
-    return this.prisma.lawyer.findMany({
+  async getAllSources() {
+    return this.prisma.legalSource.findMany({
       select: {
         id: true,
-        slug: true,
-        firstName: true,
-        lastName: true,
-        city: true,
-        isVerified: true,
-        licenseVerified: true,
-        avgRating: true,
-        reviewCount: true,
-        createdAt: true,
+        authorityName: true,
+        authorityType: true,
+        countryCode: true,
+        officialUrl: true,
+        status: true,
+        documentType: true,
+        retrievedAt: true,
       },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async getAllReviews(status?: string) {
-    const where = status ? { status: status as any } : {};
-    return this.prisma.review.findMany({
-      where,
-      include: { lawyer: { select: { id: true, firstName: true, lastName: true, slug: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { retrievedAt: 'desc' },
     });
   }
 
@@ -70,6 +57,16 @@ export class AdminService {
     return this.prisma.user.findMany({
       select: { id: true, email: true, name: true, role: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getAuditEvents(limit = 50) {
+    return this.prisma.auditEvent.findMany({
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { email: true, name: true } },
+      },
     });
   }
 }

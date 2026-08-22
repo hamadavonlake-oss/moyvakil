@@ -1,109 +1,225 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Prisma,
+  DocumentStatus,
+  SectionType,
+} from '@prisma/client';
+import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateLawDto, UpdateLawDto, LawQueryDto } from './dto/law.dto';
+import {
+  CreateLegalDocumentDto,
+  UpdateLegalDocumentDto,
+  LegalDocumentQueryDto,
+  SectionQueryDto,
+} from './dto/law.dto';
+
+const DOCUMENT_LIST_SELECT = {
+  id: true,
+  title: true,
+  documentType: true,
+  status: true,
+  effectiveFrom: true,
+  effectiveTo: true,
+  languageCode: true,
+  createdAt: true,
+  updatedAt: true,
+  country: { select: { id: true, code: true, nameUz: true, nameRu: true, nameEn: true } },
+  jurisdiction: { select: { id: true, code: true, name: true } },
+  source: { select: { id: true, authorityName: true, title: true, documentType: true, officialUrl: true } },
+  _count: { select: { versions: true, sections: true } },
+} satisfies Prisma.LegalDocumentSelect;
 
 @Injectable()
 export class LawsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: LawQueryDto) {
-    const { q, category, type, status, countryId, page = 1, limit = 20 } = query;
+  private hashPayload(payload: unknown): string {
+    return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  }
 
-    const where: any = {};
-    if (countryId) where.countryId = countryId;
-    if (category) where.category = category;
-    if (type) where.type = type;
-    if (status) where.status = status;
+  async findAll(query: LegalDocumentQueryDto) {
+    const page = query.page && query.page > 0 ? Number(query.page) : 1;
+    const limit = Math.min(query.limit ? Number(query.limit) : 20, 100);
+    const skip = (page - 1) * limit;
 
-    if (q) {
+    const where: Prisma.LegalDocumentWhereInput = {};
+    if (query.countryId) where.countryId = query.countryId;
+    if (query.documentType) where.documentType = query.documentType;
+    if (query.status) where.status = query.status as DocumentStatus;
+    if (query.language) where.languageCode = query.language;
+
+    if (query.q) {
       where.OR = [
-        { titleUz: { contains: q, mode: 'insensitive' } },
-        { titleRu: { contains: q, mode: 'insensitive' } },
-        { titleEn: { contains: q, mode: 'insensitive' } },
+        { title: { contains: query.q, mode: 'insensitive' as Prisma.QueryMode } },
       ];
     }
 
     const [items, total] = await Promise.all([
-      this.prisma.law.findMany({
+      this.prisma.legalDocument.findMany({
         where,
-        select: {
-          id: true,
-          slug: true,
-          titleUz: true,
-          titleRu: true,
-          titleEn: true,
-          type: true,
-          category: true,
-          status: true,
-          adoptionDate: true,
-          sourceUrl: true,
-          lastUpdated: true,
-          country: { select: { code: true, nameUz: true, nameRu: true } },
-        },
-        orderBy: { lastUpdated: 'desc' },
-        skip: (Number(page) - 1) * Number(limit),
-        take: Number(limit),
+        select: DOCUMENT_LIST_SELECT,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
       }),
-      this.prisma.law.count({ where }),
+      this.prisma.legalDocument.count({ where }),
     ]);
 
-    return { items, total, page: Number(page), limit: Number(limit) };
-  }
-
-  async findBySlug(slug: string) {
-    const law = await this.prisma.law.findUnique({
-      where: { slug },
-      include: {
-        articles: { orderBy: { number: 'asc' } },
-        amendments: { orderBy: { date: 'desc' } },
-        country: { select: { code: true, nameUz: true, nameRu: true, nameEn: true } },
-      },
-    });
-    if (!law) throw new NotFoundException(`Law "${slug}" not found`);
-    return law;
+    return { items, total, page, limit };
   }
 
   async findById(id: string) {
-    const law = await this.prisma.law.findUnique({
+    const document = await this.prisma.legalDocument.findUnique({
       where: { id },
       include: {
-        articles: { orderBy: { number: 'asc' } },
-        amendments: { orderBy: { date: 'desc' } },
-        country: { select: { code: true, nameUz: true, nameRu: true } },
+        source: {
+          select: {
+            id: true,
+            authorityName: true,
+            authorityType: true,
+            countryCode: true,
+            officialUrl: true,
+            title: true,
+            documentType: true,
+            documentNumber: true,
+            status: true,
+          },
+        },
+        country: { select: { id: true, code: true, nameUz: true, nameRu: true, nameEn: true } },
+        jurisdiction: { select: { id: true, code: true, name: true, level: true } },
+        versions: { orderBy: { versionNumber: 'desc' } },
+        sections: {
+          orderBy: [{ ordinal: 'asc' }, { sectionLabel: 'asc' }],
+          select: {
+            id: true,
+            parentSectionId: true,
+            versionId: true,
+            sectionType: true,
+            sectionLabel: true,
+            ordinal: true,
+            languageCode: true,
+            status: true,
+            effectiveFrom: true,
+            effectiveTo: true,
+          },
+        },
       },
     });
-    if (!law) throw new NotFoundException(`Law "${id}" not found`);
-    return law;
+    if (!document) throw new NotFoundException(`Legal document "${id}" not found`);
+    return document;
   }
 
-  async create(dto: CreateLawDto) {
-    return this.prisma.law.create({
-      data: {
-        ...dto,
-        type: dto.type as any,
-        status: (dto.status as any) || 'IN_FORCE',
-        adoptionDate: dto.adoptionDate ? new Date(dto.adoptionDate) : undefined,
-        effectiveDate: dto.effectiveDate ? new Date(dto.effectiveDate) : undefined,
-      },
+  async getSections(documentId: string, query: SectionQueryDto) {
+    const document = await this.prisma.legalDocument.findUnique({
+      where: { id: documentId },
+      select: { id: true },
     });
+    if (!document) throw new NotFoundException(`Legal document "${documentId}" not found`);
+
+    const page = query.page && query.page > 0 ? Number(query.page) : 1;
+    const limit = Math.min(query.limit ? Number(query.limit) : 50, 200);
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.LegalSectionWhereInput = { documentId };
+    if (query.sectionType) where.sectionType = query.sectionType as SectionType;
+    if (query.versionId) where.versionId = query.versionId;
+    if (query.language) where.languageCode = query.language;
+
+    const [items, total] = await Promise.all([
+      this.prisma.legalSection.findMany({
+        where,
+        orderBy: [{ ordinal: 'asc' }, { sectionLabel: 'asc' }],
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          documentId: true,
+          versionId: true,
+          parentSectionId: true,
+          sectionType: true,
+          sectionLabel: true,
+          ordinal: true,
+          languageCode: true,
+          countryCode: true,
+          jurisdictionId: true,
+          status: true,
+          effectiveFrom: true,
+          effectiveTo: true,
+          sourceUrl: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      this.prisma.legalSection.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
   }
 
-  async update(id: string, dto: UpdateLawDto) {
-    await this.findById(id);
-    const { adoptionDate, status, ...rest } = dto;
-    return this.prisma.law.update({
+  async getSectionById(id: string) {
+    const section = await this.prisma.legalSection.findUnique({
       where: { id },
-      data: {
-        ...rest,
-        status: status as any,
-        adoptionDate: adoptionDate ? new Date(adoptionDate) : undefined,
-        lastUpdated: new Date(),
+      include: {
+        childSections: {
+          orderBy: { ordinal: 'asc' },
+          select: {
+            id: true,
+            sectionType: true,
+            sectionLabel: true,
+            ordinal: true,
+          },
+        },
       },
     });
+    if (!section) throw new NotFoundException(`Section "${id}" not found`);
+    return section;
+  }
+
+  async create(dto: CreateLegalDocumentDto) {
+    const data: Prisma.LegalDocumentCreateInput = {
+      title: dto.title,
+      documentType: dto.documentType,
+      status: (dto.status as DocumentStatus) ?? DocumentStatus.current,
+      effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
+      effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
+      languageCode: dto.languageCode ?? 'uz',
+      contentHash: this.hashPayload(dto),
+      source: { connect: { id: dto.sourceId } },
+      country: { connect: { id: dto.countryId } },
+      ...(dto.jurisdictionId
+        ? { jurisdiction: { connect: { id: dto.jurisdictionId } } }
+        : {}),
+    };
+
+    return this.prisma.legalDocument.create({ data });
+  }
+
+  async update(id: string, dto: UpdateLegalDocumentDto) {
+    await this.findById(id);
+
+    const data: Prisma.LegalDocumentUpdateInput = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.documentType !== undefined) data.documentType = dto.documentType;
+    if (dto.status !== undefined) data.status = dto.status as DocumentStatus;
+    if (dto.effectiveFrom !== undefined)
+      data.effectiveFrom = dto.effectiveFrom ? new Date(dto.effectiveFrom) : null;
+    if (dto.effectiveTo !== undefined)
+      data.effectiveTo = dto.effectiveTo ? new Date(dto.effectiveTo) : null;
+    if (dto.languageCode !== undefined) data.languageCode = dto.languageCode;
+    if (dto.sourceId !== undefined) data.source = { connect: { id: dto.sourceId } };
+    if (dto.countryId !== undefined) data.country = { connect: { id: dto.countryId } };
+    if (dto.jurisdictionId !== undefined)
+      data.jurisdiction = dto.jurisdictionId
+        ? { connect: { id: dto.jurisdictionId } }
+        : { disconnect: true };
+
+    data.contentHash = this.hashPayload(data);
+
+    return this.prisma.legalDocument.update({ where: { id }, data });
   }
 
   async delete(id: string) {
     await this.findById(id);
-    return this.prisma.law.delete({ where: { id } });
+    return this.prisma.legalDocument.delete({ where: { id } });
   }
 }

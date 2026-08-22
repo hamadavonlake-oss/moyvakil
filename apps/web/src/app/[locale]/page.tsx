@@ -4,8 +4,7 @@ import { type Locale, isValidLocale } from '@/lib/i18n';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Scale, BookOpen, Users, MessageCircle, Search, ArrowRight, Shield, Globe } from 'lucide-react';
-import { SearchTabs } from '@/components/search-tabs';
+import { Scale, BookOpen, MessageCircle, Search, ArrowRight, Shield } from 'lucide-react';
 
 export default async function HomePage({
   params,
@@ -20,54 +19,39 @@ export default async function HomePage({
   const features = [
     {
       icon: BookOpen,
-      title: dict.nav.laws,
+      title: dict.nav.documents,
       description: locale === 'uz'
-        ? "O'zbekiston qonunlari va kodekslarini to'liq matnini o'qing"
+        ? "O'zbekiston qonunlari va kodekslarini rasmiy manbalar asosida o'qing"
         : locale === 'ru'
-        ? 'Читайте полный текст законов и кодексов Узбекистана'
-        : 'Read the full text of Uzbekistan laws and codes',
-      href: `/${locale}/laws`,
-    },
-    {
-      icon: Users,
-      title: dict.nav.lawyers,
-      description: locale === 'uz'
-        ? "Professional advokatlarni toping va ularning reytinglarini ko'ring"
-        : locale === 'ru'
-        ? 'Найдите профессиональных адвокатов и посмотрите их рейтинги'
-        : 'Find professional lawyers and view their ratings',
-      href: `/${locale}/lawyers`,
+        ? 'Читайте законы и кодексы Узбекистана на основе официальных источников'
+        : 'Read Uzbekistan laws and codes based on official sources',
+      href: `/${locale}/documents`,
     },
     {
       icon: MessageCircle,
-      title: dict.nav.qa,
+      title: dict.nav.chat,
       description: locale === 'uz'
-        ? "Huquqiy savollaringizni bering va javoblar oling"
+        ? "Huquqiy savolingizni bering va manbalar bilan javob oling"
         : locale === 'ru'
-        ? 'Задавайте правовые вопросы и получайте ответы'
-        : 'Ask legal questions and get answers',
-      href: `/${locale}/qa`,
+        ? 'Задайте правовой вопрос и получите ответ со ссылками на источники'
+        : 'Ask a legal question and get cited answers',
+      href: `/${locale}/chat`,
     },
     {
-      icon: Scale,
-      title: dict.nav.askAi,
+      icon: Search,
+      title: dict.nav.search,
       description: locale === 'uz'
-        ? "Sun'iy intellekt yordamida huquqiy maslahatlar oling"
+        ? "Qonunlar va moddalar bo'yicha to'liq qidiruv"
         : locale === 'ru'
-        ? 'Получите юридические консультации с помощью ИИ'
-        : 'Get legal consultations powered by AI',
-      href: `/${locale}/ask-ai`,
+        ? 'Полноценный поиск по законам и статьям'
+        : 'Full-text search across laws and provisions',
+      href: `/${locale}/search`,
     },
-  ];
-
-  const stats = [
-    { value: '3', label: locale === 'uz' ? 'Tillar' : locale === 'ru' ? 'Языки' : 'Languages' },
-    { value: '6+', label: locale === 'uz' ? 'Asosiy qonunlar' : locale === 'ru' ? 'Основные законы' : 'Key Laws' },
   ];
 
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="relative bg-gradient-to-br from-primary to-primary-dark text-white py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
@@ -77,28 +61,12 @@ export default async function HomePage({
             <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-2xl">
               {dict.hero.subtitle}
             </p>
-
-            {/* Search Bar */}
-            <SearchTabs dict={dict} locale={locale} />
+            <Button size="lg" asChild>
+              <Link href={`/${locale}/chat`}>{dict.hero.cta}</Link>
+            </Button>
           </div>
         </div>
-
-        {/* Decorative element */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-      </section>
-
-      {/* Stats */}
-      <section className="py-12 bg-surface-dim border-b border-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold text-primary">{stat.value}</div>
-                <div className="text-sm text-text-muted mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* Features */}
@@ -108,16 +76,9 @@ export default async function HomePage({
             <h2 className="text-3xl font-bold text-text mb-4">
               {locale === 'uz' ? "Platforma imkoniyatlari" : locale === 'ru' ? 'Возможности платформы' : 'Platform Features'}
             </h2>
-            <p className="text-text-muted max-w-2xl mx-auto">
-              {locale === 'uz'
-                ? "Bepul huquqiy ma'lumot, professional advokatlar va AI yurist — hammasi bir joyda"
-                : locale === 'ru'
-                ? 'Бесплатная правовая информация, профессиональные адвокаты и AI юрист — всё в одном месте'
-                : 'Free legal information, professional lawyers, and AI lawyer — all in one place'}
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {features.map((feature) => (
               <Link key={feature.href} href={feature.href}>
                 <Card className="h-full hover:shadow-md hover:border-secondary/50 transition-all cursor-pointer group">
@@ -137,31 +98,21 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-16 bg-surface-dim">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-2xl mx-auto">
             <Shield className="h-12 w-12 text-secondary mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-text mb-4">
-              {locale === 'uz'
-                ? 'Huquqiy ma\'lumotlar platformasi'
-                : locale === 'ru'
-                ? 'Платформа правовой информации'
-                : 'Legal Information Platform'}
+              {dict.footer.about}
             </h2>
-            <p className="text-text-muted mb-8">
-              {locale === 'uz'
-                ? 'Respublika qonunlari va huquqiy hujjatlar haqida ma\'lumot. [TBD: content verification workflow to be established]'
-                : locale === 'ru'
-                ? 'Информация о законах и правовых документах республики. [TBD: content verification workflow to be established]'
-                : 'Information about republic laws and legal documents. [TBD: content verification workflow to be established]'}
-            </p>
+            <p className="text-text-muted mb-8">{dict.footer.aboutText}</p>
             <div className="flex items-center justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href={`/${locale}/laws`}>{dict.nav.laws}</Link>
+                <Link href={`/${locale}/documents`}>{dict.nav.documents}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href={`/${locale}/lawyers`}>{dict.nav.lawyers}</Link>
+                <Link href={`/${locale}/chat`}>{dict.nav.chat}</Link>
               </Button>
             </div>
           </div>

@@ -18,8 +18,8 @@ export class AiController {
 
   @Post('chat')
   @UseGuards(OptionalJwtAuthGuard)
-  @ApiOperation({ summary: 'Chat with AI legal assistant (alias for /ask)' })
+  @ApiOperation({ summary: 'Chat with AI legal assistant (alias)' })
   chat(@Body() dto: ChatDto) {
-    return this.aiService.ask({ question: dto.message, language: dto.language, countryId: dto.countryId });
+    return this.aiService.ask({ question: dto.message, language: dto.language, countryCode: dto.countryCode });
   }
 }

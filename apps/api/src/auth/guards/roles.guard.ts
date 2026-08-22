@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { UserRole } from '@prisma/client';
 
 export const ROLES_KEY = 'roles';
-export const Roles = (...roles: UserRole[]) => {
+export const Roles = (...roles: Array<UserRole | string>) => {
   const { SetMetadata } = require('@nestjs/common');
   return SetMetadata(ROLES_KEY, roles);
 };
@@ -13,7 +13,7 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<Array<UserRole | string>>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);

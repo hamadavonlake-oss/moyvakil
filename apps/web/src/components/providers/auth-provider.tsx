@@ -25,8 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem('moyvakil_token');
-      const storedUser = localStorage.getItem('moyvakil_user');
+      const storedToken = localStorage.getItem('vakilim_token');
+      const storedUser = localStorage.getItem('vakilim_user');
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
@@ -35,15 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback((newToken: string, newUser: User) => {
-    localStorage.setItem('moyvakil_token', newToken);
-    localStorage.setItem('moyvakil_user', JSON.stringify(newUser));
+    localStorage.setItem('vakilim_token', newToken);
+    localStorage.setItem('vakilim_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('moyvakil_token');
-    localStorage.removeItem('moyvakil_user');
+    localStorage.removeItem('vakilim_token');
+    localStorage.removeItem('vakilim_user');
     setToken(null);
     setUser(null);
   }, []);

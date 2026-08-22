@@ -3,12 +3,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
 
 @ApiTags('Admin')
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@Roles('admin', 'super_admin')
 @ApiBearerAuth()
 export class AdminController {
   constructor(private adminService: AdminService) {}
@@ -19,27 +18,27 @@ export class AdminController {
     return this.adminService.getStats();
   }
 
-  @Get('laws')
-  @ApiOperation({ summary: 'List all laws for admin (admin)' })
-  getAllLaws() {
-    return this.adminService.getAllLaws();
+  @Get('documents')
+  @ApiOperation({ summary: 'List all legal documents (admin)' })
+  getAllDocuments() {
+    return this.adminService.getAllDocuments();
   }
 
-  @Get('lawyers')
-  @ApiOperation({ summary: 'List all lawyers for admin (admin)' })
-  getAllLawyers() {
-    return this.adminService.getAllLawyers();
-  }
-
-  @Get('reviews')
-  @ApiOperation({ summary: 'List reviews with optional status filter (admin)' })
-  getAllReviews(@Query('status') status?: string) {
-    return this.adminService.getAllReviews(status);
+  @Get('sources')
+  @ApiOperation({ summary: 'List all legal sources (admin)' })
+  getAllSources() {
+    return this.adminService.getAllSources();
   }
 
   @Get('users')
   @ApiOperation({ summary: 'List all users (admin)' })
   getAllUsers() {
     return this.adminService.getAllUsers();
+  }
+
+  @Get('audit')
+  @ApiOperation({ summary: 'Get recent audit events (admin)' })
+  getAuditEvents(@Query('limit') limit?: string) {
+    return this.adminService.getAuditEvents(limit ? parseInt(limit) : 50);
   }
 }
